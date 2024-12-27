@@ -24,8 +24,9 @@
 
 
 ## Exteral Trigger Function
-![IMX296](https://github.com/INNO-MAKER/cam-imx296raw-trigger/blob/main/1-4Images/Signal.jpg "IMX296")
-- How to Enaable External Trigger 
+![External Trigger Function](https://github.com/INNO-MAKER/cam-imx296raw-trigger/blob/main/1-4Images/Signal.jpg "IMX296 External Tigger")
+
+- How to Enable External Trigger 
   - Step1, sudo su
   - Step2, echo 1 > /sys/module/imx296/parameters/trigger_mode
 
