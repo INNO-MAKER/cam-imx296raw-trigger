@@ -51,27 +51,32 @@ Pi5  csi1 i2c bus address :i2c-4
 
 Note: strobe setting  must be done while camera stream is off. 
 
-### Regs and setting values:
+## Regs and setting values:
 - 0x3026: 0x0F
 - 0X3029:0x21
-- 0x306D: 0X02(trigger mode strobe enable) /0x01(normal mode strobe enable)
-### Storbe start point 3byte:
+- 0x306D: 0X02
+
+### (trigger mode strobe enable) /0x01(normal mode strobe enable)
+#### Storbe start point 3byte:
 - 0x3070 :0x00
 - 0x3071 :0x00
 - 0x3072 :0x00
-### Strobe  end point 3byte:
+#### Strobe end point 3byte:
 - 0x3074 :0x2c
 - 0x3075 :0x01
 - 0x3076 :0x00
-- 0x3079: 0X0A(trigger mode strobe enable) /0x09(normal mode strobe enable)
-### Storbe start point 3byte:
+- 0x3079: 0X0A
+
+### (trigger mode strobe enable) /0x09(normal mode strobe enable)
+#### Storbe start point 3byte:
 - 0x307c :0x00
 - 0x307d :0x00
 - 0x307e :0x00
-### Strobe  end point 3byte:
+#### Strobe  end point 3byte:
 - 0x3080 :0x2c
 - 0x3081 :0x01
 - 0x3082 :0x00
+  
 ### I2c tools write register:
 ./i2c_write  4  0x1a <reg addr> <reg val>
 ### I2c tools read register:
