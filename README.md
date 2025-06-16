@@ -40,17 +40,13 @@
 ![IMX296](https://github.com/INNO-MAKER/cam-imx296raw-trigger/blob/main/1-4Images/Conection.png "IMX296")
 
 ## Strobe Manual 
-
-- IMX296 official driver that provide by RPI default kernel not enable strobe by default.
-
-- Imx296  can output strobe while work in normal or fast trigger mode.
+  IMX296 official driver that provide by RPI default kernel not enable strobe by default.
+  Imx296  can output strobe while work in normal or fast trigger mode.
 We can enable strobe by i2c tools.
 
-I2c tools write register:
-./i2c_write  4  0x1a <reg addr> <reg val>
-### I2c tools read register:
-./i2c_read  4  0x1a <reg addr> <num of regs regs to read>
+- [Strobe Value Manual](https://github.com/INNO-MAKER/cam-imx296raw-trigger/blob/main/pi5-imx296%20strobe%20setting-setting-libcamera.pdf)
 
+- [i2c-Tools-Download](https://github.com/INNO-MAKER/cam-imx296raw-trigger/blob/main/i2c-tools-arch64.zip)
 
 
 ## More Information
