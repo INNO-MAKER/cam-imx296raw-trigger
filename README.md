@@ -46,8 +46,9 @@ We can enable strobe by i2c tools.
 
 - [Strobe Value Manual](https://github.com/INNO-MAKER/cam-imx296raw-trigger/blob/main/pi5-imx296%20strobe%20setting-setting-libcamera.pdf)
 
-- [i2c-Tools-Download](https://github.com/INNO-MAKER/cam-imx296raw-trigger/blob/main/i2c-tools-arch64.zip)
+- [i2c-Tools-arch64](https://github.com/INNO-MAKER/cam-imx296raw-trigger/blob/main/i2c-tools-arch64.zip)
 
+- [i2c-Tools-arch32](https://github.com/INNO-MAKER/cam-imx296raw-trigger/blob/main/i2c-tools-arch32.zip)
 
 ## More Information
 - https://github.com/raspberrypi/documentation/tree/develop/documentation/asciidoc/accessories/camera
