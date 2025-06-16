@@ -48,8 +48,7 @@ We can enable strobe by i2c tools.
 
 I2c tools write register:
 ./i2c_write  4  0x1a <reg addr> <reg val>
-
-I2c tools read register:
+### I2c tools read register:
 ./i2c_read  4  0x1a <reg addr> <num of regs regs to read>
 
 
