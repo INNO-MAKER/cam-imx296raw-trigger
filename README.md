@@ -20,7 +20,7 @@
 - libcamera-hello -t 0
 
 #### More information
-- [https://www.raspberrypi.com/documentation/computers/camera_softwarehtml](https://www.raspberrypi.com/documentation/computers/camera_softwarehtml)
+- [https://www.raspberrypi.com/documentation/computers/camera_software.html](https://www.raspberrypi.com/documentation/computers/camera_software.html)
 
 
 ## User Manual 
