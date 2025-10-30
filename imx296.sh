@@ -1,6 +1,6 @@
 while true;do
 	gpioset gpiochip0 23=1
-	sleep 0.0417
+	sleep 1.9999
 	gpioset gpiochip0 23=0
-	sleep 0.0083
+	sleep 0.0033
 done
