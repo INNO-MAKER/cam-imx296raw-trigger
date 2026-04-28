@@ -1,6 +1,5 @@
 # CAM-IMX296RAW-TRIGGER Camera Module
 
-![IMX296 Camera Module](https://www.inno-maker.com/wp-content/uploads/2021/06/IMX296-MIPI-4.jpg "IMX296")
 
 The **CAM-IMX296RAW-TRIGGER** is an industrial-grade camera module for Raspberry Pi, featuring the **Sony IMX296** global shutter CMOS sensor. It is designed for high-speed motion capture, automation, and machine vision applications where rolling shutter distortion must be eliminated.
 
