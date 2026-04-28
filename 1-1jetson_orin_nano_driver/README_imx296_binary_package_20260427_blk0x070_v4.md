@@ -6,15 +6,17 @@
 
 ```
 binary/
-  imx296.ko                                                 # kernel module (5.15.148-tegra)
-  tegra234-p3767-camera-p3768-imx296-imx296.dtbo            # CSI0 + CSI1 = imx296 (color) + imx296 (color)
-  tegra234-p3767-camera-p3768-imx219-imx296.dtbo            # CSI0 + CSI1 = imx219          + imx296 (color)
-  tegra234-p3767-camera-p3768-imx477-imx296.dtbo            # CSI0 + CSI1 = imx477          + imx296 (color)
+  imx296.ko                                                       # kernel module (5.15.148-tegra)
+  tegra234-p3767-camera-p3768-imx296-imx296.dtbo                  # CSI0 + CSI1 = imx296 (color) + imx296 (color)
+  tegra234-p3767-camera-p3768-imx219-imx296.dtbo                  # CSI0 + CSI1 = imx219          + imx296 (color)
+  tegra234-p3767-camera-p3768-imx477-imx296.dtbo                  # CSI0 + CSI1 = imx477          + imx296 (color)
+  tegra234-p3767-camera-p3768-imx296mono-imx296mono.dtbo          # CSI0 + CSI1 = imx296 (mono)   + imx296 (mono)
+  tegra234-p3767-camera-p3768-imx296mono-single-csi0.dtbo         # CSI0 only   = imx296 (mono)
 scripts/
-  install_binary.sh / install_binary_EN.sh                  # installer (zh / en)
-  camera_control.sh                                         # mono preview helper
-  camera_control_color.sh                                   # color preview helper
-  adjust_brightness.sh                                      # brightness test
+  install_binary.sh / install_binary_EN.sh                        # installer (zh / en)
+  camera_control.sh                                               # mono preview helper
+  camera_control_color.sh                                         # color preview helper
+  adjust_brightness.sh                                            # brightness test
 ```
 
 ## Install
@@ -44,6 +46,8 @@ In the menu select:
    - `Camera IMX296 Dual` — two IMX296 color sensors
    - `Camera IMX219 + IMX296` — IMX219 on CSI0, IMX296 on CSI1
    - `Camera IMX477 + IMX296` — IMX477 on CSI0, IMX296 on CSI1
+   - `Camera IMX296MONO Dual` — two IMX296 mono sensors
+   - `Camera IMX296MONO Single CSI0` — single IMX296 mono on CSI0
 4. **Save pin changes** → **Save and reboot to reconfigure pins**
 
 The tool patches `/boot/extlinux/extlinux.conf` with the right `OVERLAYS` line and reboots.
