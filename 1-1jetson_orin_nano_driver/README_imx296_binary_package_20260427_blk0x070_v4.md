@@ -13,7 +13,7 @@ binary/
   tegra234-p3767-camera-p3768-imx296mono-imx296mono.dtbo          # CSI0 + CSI1 = imx296 (mono)   + imx296 (mono)
   tegra234-p3767-camera-p3768-imx296mono-single-csi0.dtbo         # CSI0 only   = imx296 (mono)
 scripts/
-  install_binary.sh / install_binary_EN.sh                        # installer (zh / en)
+  install_binary.sh                                               # installer
   camera_control.sh                                               # mono preview helper
   camera_control_color.sh                                         # color preview helper
   adjust_brightness.sh                                            # brightness test
@@ -22,8 +22,8 @@ scripts/
 ## Install
 
 ```bash
-tar -xzf imx296_binary_package_20260427_blk0x070_v4.tar.gz -C ~/imx296_v4
-cd ~/imx296_v4/scripts
+tar -xzf imx296_binary_package_20260427_blk0x070_v4.tar.gz
+cd scripts
 chmod +x install_binary.sh
 ./install_binary.sh
 ```
