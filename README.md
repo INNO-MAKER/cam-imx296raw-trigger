@@ -67,16 +67,16 @@ Reboot your Raspberry Pi:
 sudo reboot
 ```
 
-Test the camera using the `libcamera` suite:
+Test the camera using the `rpicam-apps` suite:
 ```bash
 # Preview the camera stream
-libcamera-hello -t 0
+rpicam-hello -t 0
 
 # Capture a still image
-libcamera-still -o test.jpg
+rpicam-still -o test.jpg
 
 # List available cameras
-libcamera-hello --list-cameras
+rpicam-hello --list-cameras
 ```
 
 ---
@@ -150,6 +150,26 @@ gst-launch-1.0 nvarguscamerasrc num-buffers=30 \
     gainrange="4 4" exposuretimerange="200000 200000" \
     ! 'video/x-raw(memory:NVMM),width=1456,height=1088' \
     ! nvvidconv ! xvimagesink
+```
+
+---
+
+### Raspberry Pi Camera Testing
+
+For Raspberry Pi, use the `rpicam-apps` suite to test the camera:
+
+```bash
+# Preview the camera stream
+rpicam-hello -t 0
+
+# Capture a still image
+rpicam-still -o test.jpg
+
+# Record video (5 seconds)
+rpicam-vid -t 5000 -o test.h264
+
+# List available cameras
+rpicam-hello --list-cameras
 ```
 
 ### Camera Control Parameters
