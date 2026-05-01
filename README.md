@@ -8,7 +8,7 @@
 
 The **CAM-IMX296Mono-GS** and **CAM-IMX296Color-GS** are professional-grade global shutter camera modules featuring the **Sony IMX296** CMOS sensor. The **Mono** variant (IMX296LLR) provides monochrome imaging without color filter, while the **Color** variant (IMX296LQR) includes a fixed color filter array. Both are designed for high-speed motion capture, automation, and machine vision applications where rolling shutter distortion must be eliminated.
 
-These modules are fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson Orin Nano, supporting advanced features like hardware trigger and strobe synchronization. With support for up to 60fps at 1456×1088 resolution and exposure times as short as 30μs, they are ideal for high-speed photography and demanding imaging applications.
+These modules are fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson Orin Nano. Both platforms support up to 60fps at 1456×1088 resolution and exposure times as short as 30μs. Advanced features like hardware trigger and strobe synchronization are currently available on Raspberry Pi (support for Jetson Orin Nano coming soon). These capabilities make them ideal for high-speed photography and demanding imaging applications.
 
 ---
 
