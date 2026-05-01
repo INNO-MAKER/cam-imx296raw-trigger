@@ -1,5 +1,7 @@
 # CAM-IMX296Mono-GS / CAM-IMX296Color-GS Camera Module
 
+![CAM-IMX296 Compatibility](./1-4Images/compatibility.jpg)
+
 **Raspberry Pi Global Shutter Camera**  
 **Support Hardware Trigger and Strobe**  
 **With Sony IMX296 Mono/Color Sensor**
@@ -229,10 +231,10 @@ python3 i2c.py --help
 
 | Platform | OS | Status | Notes |
 |---|---|---|---|
-| Raspberry Pi 3 | Bullseye, Bookworm | ✓ Supported | Legacy kernel support available |
-| Raspberry Pi 4 | Bullseye, Bookworm, Trixie | ✓ Supported | Recommended for production |
-| Raspberry Pi 5 | Bookworm, Trixie | ✓ Supported | Latest platform, fully optimized |
-| NVIDIA Jetson Orin Nano | JetPack 6.0+ | ✓ Supported | Binary driver package included |
+| Raspberry Pi 3 | Bullseye, Bookworm | ✓ Supported | Legacy kernel support available; Trigger/Strobe supported |
+| Raspberry Pi 4 | Bullseye, Bookworm, Trixie | ✓ Supported | Recommended for production; Trigger/Strobe supported |
+| Raspberry Pi 5 | Bookworm, Trixie | ✓ Supported | Latest platform, fully optimized; Trigger/Strobe supported |
+| NVIDIA Jetson Orin Nano | JetPack 6.0+ | ✓ Supported | Binary driver package included; Trigger/Strobe coming soon |
 
 ---
 
