@@ -1,19 +1,29 @@
-# CAM-IMX296RAW-TRIGGER Camera Module
+# CAM-IMX296Mono-GS / CAM-IMX296Color-GS Camera Module
 
-The **CAM-IMX296RAW-TRIGGER** is an industrial-grade camera module featuring the **Sony IMX296** global shutter CMOS sensor. It is designed for high-speed motion capture, automation, and machine vision applications where rolling shutter distortion must be eliminated.
+**Raspberry Pi Global Shutter Camera**  
+**Support Hardware Trigger and Strobe**  
+**With Sony IMX296 Mono/Color Sensor**
 
-This module is fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson Orin Nano, supporting advanced features like hardware trigger and strobe synchronization.
+The **CAM-IMX296Mono-GS** and **CAM-IMX296Color-GS** are professional-grade global shutter camera modules featuring the **Sony IMX296** CMOS sensor. The **Mono** variant (IMX296LLR) provides monochrome imaging without color filter, while the **Color** variant (IMX296LQR) includes a fixed color filter array. Both are designed for high-speed motion capture, automation, and machine vision applications where rolling shutter distortion must be eliminated.
+
+These modules are fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson Orin Nano, supporting advanced features like hardware trigger and strobe synchronization. With support for up to 60fps at 1456×1088 resolution and exposure times as short as 30μs, they are ideal for high-speed photography and demanding imaging applications.
 
 ---
 
 ## Key Features
 
-*   **Sony IMX296 Global Shutter Sensor**: 1.58 MP (1456 x 1088) resolution with 3.45 µm pixels.
-*   **Global Shutter**: Eliminates motion blur and rolling shutter distortion in high-speed applications.
-*   **Hardware Trigger & Strobe**: Dedicated pins for external trigger input and strobe output (no soldering required).
-*   **Broad Compatibility**: Supports Raspberry Pi 3, 4, and 5 (Debian Bookworm/Trixie) and NVIDIA Jetson Orin Nano.
-*   **Mono & Color Versions**: Compatible with both monochrome and color sensor variants.
-*   **Native Driver Support**: Works directly with official kernel drivers for both platforms.
+*   **1.58MP Global Shutter Sensor**: 1456 × 1088 resolution with 3.4μm × 3.4μm pixel size
+*   **Global Shutter**: Eliminates motion blur and rolling shutter distortion in high-speed applications
+*   **High Frame Rate**: Support up to 60fps@1456×1088, with exposure times down to 30μs
+*   **Mono & Color Variants**: 
+    - **CAM-IMX296Mono-GS** (IMX296LLR) - No color filter for maximum sensitivity
+    - **CAM-IMX296Color-GS** (IMX296LQR) - Fixed color filter array for RGB imaging
+*   **Hardware Trigger & Strobe**: Dedicated pins for external trigger input and strobe output
+*   **Low Power Consumption**: Operates with analog 3.3V, digital 1.2V, and interface 1.8V triple power supply
+*   **High Sensitivity**: Low dark current and low PLS characteristics for excellent low-light performance
+*   **Broad Compatibility**: Supports Raspberry Pi 3, 4, and 5 (Debian Bookworm/Trixie) and NVIDIA Jetson Orin Nano
+*   **Native Driver Support**: Works directly with official kernel drivers for both platforms
+*   **Flexible Lens Options**: Support M12 and CS lens mounts with included lens holder and adapter
 
 ---
 
