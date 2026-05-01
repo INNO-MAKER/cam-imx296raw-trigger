@@ -18,7 +18,7 @@ These modules are fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson
 *   **Mono & Color Variants**: 
     - **CAM-IMX296Mono-GS** (IMX296LLR) - No color filter for maximum sensitivity
     - **CAM-IMX296Color-GS** (IMX296LQR) - Fixed color filter array for RGB imaging
-*   **Hardware Trigger & Strobe**: Dedicated pins for external trigger input and strobe output
+*   **Hardware Trigger & Strobe**: Dedicated pins for external trigger input and strobe output (Raspberry Pi only; Jetson Orin Nano support coming soon)
 *   **Low Power Consumption**: Operates with analog 3.3V, digital 1.2V, and interface 1.8V triple power supply
 *   **High Sensitivity**: Low dark current and low PLS characteristics for excellent low-light performance
 *   **Broad Compatibility**: Supports Raspberry Pi 3, 4, and 5 (Debian Bookworm/Trixie) and NVIDIA Jetson Orin Nano
@@ -176,12 +176,14 @@ Use the `adjust_brightness.sh` script for quick brightness adjustments:
 
 ## Advanced Features: Hardware Trigger
 
-The module supports hardware triggering via GPIO for both Raspberry Pi and Jetson platforms.
+The module supports hardware triggering via GPIO for Raspberry Pi platforms. Jetson Orin Nano support for external trigger and strobe is coming soon.
 
 ### Raspberry Pi Trigger Scripts
 
 *   **Standard Trigger (`imx296.sh`)**: A loop script that toggles GPIO 23 to trigger the camera.
 *   **Trixie/Bookworm Trigger (`imx296-trixie.sh`)**: Optimized trigger command for the latest OS versions using `gpioset`.
+
+**Note**: External trigger and strobe functionality are currently available for Raspberry Pi only. Jetson Orin Nano support is under development.
 
 ### Trigger Pinout
 
