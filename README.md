@@ -8,7 +8,7 @@
 
 The **CAM-IMX296Mono-GS** and **CAM-IMX296Color-GS** are professional-grade global shutter camera modules featuring the **Sony IMX296** CMOS sensor. The **Mono** variant (IMX296LLR) provides monochrome imaging without color filter, while the **Color** variant (IMX296LQR) includes a fixed color filter array. Both are designed for high-speed motion capture, automation, and machine vision applications where rolling shutter distortion must be eliminated.
 
-These modules are fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson Orin Nano. Both platforms support up to 60fps at 1456×1088 resolution and exposure times as short as 30μs. Advanced features like hardware trigger and strobe synchronization are currently available on Raspberry Pi (support for Jetson Orin Nano coming soon). These capabilities make them ideal for high-speed photography and demanding imaging applications.
+These modules are fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson Orin Nano. Both platforms support up to 60fps at 1456×1088 resolution and exposure times as short as 30μs. Advanced features like hardware trigger and strobe synchronization are currently available on Raspberry Pi only (Not supported on Jetson Orin Nano currently). These capabilities make them ideal for high-speed photography and demanding imaging applications.
 
 ---
 
@@ -20,7 +20,7 @@ These modules are fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson
 *   **Mono & Color Variants**: 
     - **CAM-IMX296Mono-GS** (IMX296LLR) - No color filter for maximum sensitivity
     - **CAM-IMX296Color-GS** (IMX296LQR) - Fixed color filter array for RGB imaging
-*   **Hardware Trigger & Strobe**: Dedicated pins for external trigger input and strobe output (Raspberry Pi only; Jetson Orin Nano support coming soon)
+*   **Hardware Trigger & Strobe**: Dedicated pins for external trigger input and strobe output (Raspberry Pi only; Not supported on Jetson Orin Nano currently)
 *   **Low Power Consumption**: Operates with analog 3.3V, digital 1.2V, and interface 1.8V triple power supply
 *   **High Sensitivity**: Low dark current and low PLS characteristics for excellent low-light performance
 *   **Broad Compatibility**: Supports Raspberry Pi 3, 4, and 5 (Debian Bookworm/Trixie) and NVIDIA Jetson Orin Nano
@@ -178,14 +178,14 @@ Use the `adjust_brightness.sh` script for quick brightness adjustments:
 
 ## Advanced Features: Hardware Trigger
 
-The module supports hardware triggering via GPIO for Raspberry Pi platforms. Jetson Orin Nano support for external trigger and strobe is coming soon.
+The module supports hardware triggering via GPIO for Raspberry Pi platforms. External trigger and strobe are not currently supported on Jetson Orin Nano.
 
 ### Raspberry Pi Trigger Scripts
 
 *   **Standard Trigger (`imx296.sh`)**: A loop script that toggles GPIO 23 to trigger the camera.
 *   **Trixie/Bookworm Trigger (`imx296-trixie.sh`)**: Optimized trigger command for the latest OS versions using `gpioset`.
 
-**Note**: External trigger and strobe functionality are currently available for Raspberry Pi only. Jetson Orin Nano support is under development.
+**Note**: External trigger and strobe functionality are currently available for Raspberry Pi only. Not supported on Jetson Orin Nano currently.
 
 ### Trigger Pinout
 
@@ -234,7 +234,7 @@ python3 i2c.py --help
 | Raspberry Pi 3 | Bullseye, Bookworm | ✓ Supported | Legacy kernel support available; Trigger/Strobe supported |
 | Raspberry Pi 4 | Bullseye, Bookworm, Trixie | ✓ Supported | Recommended for production; Trigger/Strobe supported |
 | Raspberry Pi 5 | Bookworm, Trixie | ✓ Supported | Latest platform, fully optimized; Trigger/Strobe supported |
-| NVIDIA Jetson Orin Nano | JetPack 6.0+ | ✓ Supported | Binary driver package included; Trigger/Strobe coming soon |
+| NVIDIA Jetson Orin Nano | JetPack 6.0+ | ✓ Supported | Binary driver package included; Trigger/Strobe not supported currently |
 
 ---
 
