@@ -221,135 +221,16 @@ Pre-compiled I2C diagnostic tools are provided for both 32-bit and 64-bit system
 
 *   **`i2c-tools-arch32/`**: 32-bit binaries (`i2c_read`, `i2c_write`)
 *   **`i2c-tools-arch64/`**: 64-bit binaries (`i2c_read`, `i2c_write`)
-*   **`i2c-tools-python-eeprom-strobe-trigger/`**: Python-based utilities for trigger, strobe, and EEPROM control
+*   **`i2c-tools-python-eeprom&strobe/`**: Python-based utilities for EEPROM and strobe control
 
-### Python I2C Tools (`i2c.py`)
+### Python I2C Tools
 
-The `i2c-tools-python-eeprom-strobe-trigger/i2c.py` script is a single Python 3 tool (stdlib only, no external dependencies) that covers three functions over I2C:
-
-- **External trigger** — enable/disable hardware trigger mode (replaces the standalone `imx296_trigger` binary)
-- **Strobe** — enable/disable the sensor's strobe output
-- **On-board EEPROM** — read/write/backup the FT24C08A 1 KB EEPROM
-
-It also works as a drop-in replacement for the prebuilt `i2c_read` / `i2c_write` C binaries.
-
-#### Which `--bus` to use? (Raspberry Pi 5)
-
-The `--bus` number depends on which CSI port the camera ribbon is plugged into:
-
-| CSI Port on Pi 5 | `--bus` value |
-| :--- | :--- |
-| CAM1 | `--bus 4` |
-| CAM0 | `--bus 6` |
-
-Not sure? Run `ls /dev/i2c-*` to list available buses, then `i2cdetect -y 4` (or `-y 6`) to confirm — the sensor appears at `0x1a` and the EEPROM at `0x50..0x53`.
-
-#### Quick Start
+For advanced I2C operations (EEPROM read/write, strobe control):
 
 ```bash
-sudo chmod +x i2c-tools-python-eeprom-strobe-trigger/i2c.py
-cd i2c-tools-python-eeprom-strobe-trigger
-
-# Sanity check: should print "EEPROM chips found: 0x50 0x51 0x52 0x53"
-sudo python3 i2c.py eeprom detect --bus 4
+cd i2c-tools-python-eeprom\&strobe
+python3 i2c.py --help
 ```
-
-#### External Trigger
-
-> **Important**: Run `trigger on/off` while the camera stream is **stopped** (no `rpicam-hello` / `libcamera-*` / `v4l2` running).
-
-```bash
-# Enter external-trigger mode: sensor waits for a pulse on the XTR pin before exposing each frame
-sudo python3 i2c.py trigger on  --bus 4
-
-# Return to free-running mode
-sudo python3 i2c.py trigger off --bus 4
-
-# Read back the 4 trigger-related registers with hints
-sudo python3 i2c.py trigger show --bus 4
-```
-
-This replaces InnoMaker's standalone `imx296_trigger` binary and runs the same 6-write register sequence.
-
-#### Combining Trigger + Strobe
-
-For hardware-synchronised flash (each XTR pulse → one frame + one strobe pulse on the STROBE pin):
-
-```bash
-sudo python3 i2c.py trigger on --bus 4
-sudo python3 i2c.py strobe  on --bus 4 --mode trigger
-```
-
-To revert:
-
-```bash
-sudo python3 i2c.py strobe  off --bus 4
-sudo python3 i2c.py trigger off --bus 4
-```
-
-#### Strobe
-
-> **Important**: Stop any running camera stream before calling `strobe on`.
-
-```bash
-# External-trigger mode + strobe out
-sudo python3 i2c.py strobe on  --bus 4 --mode trigger
-
-# Continuous-streaming mode + strobe out
-sudo python3 i2c.py strobe on  --bus 4 --mode normal
-
-# Turn strobe off
-sudo python3 i2c.py strobe off --bus 4
-
-# Read back strobe registers with hints
-sudo python3 i2c.py strobe show --bus 4
-```
-
-#### EEPROM
-
-The board has an FT24C08A EEPROM — four pages of 256 bytes each at `0x50, 0x51, 0x52, 0x53` (1 KB total).
-
-```bash
-# Confirm all 4 pages respond
-sudo python3 i2c.py eeprom detect --bus 4
-
-# Back up everything to a file (recommended before any write)
-sudo python3 i2c.py eeprom dump --bus 4 --out cal_$(date +%Y%m%d).bin
-
-# Read 16 bytes from page 0x51 at offset 0
-sudo python3 i2c.py eeprom read --bus 4 --chip 0x51 --offset 0 --length 16
-
-# Write a few bytes
-sudo python3 i2c.py eeprom write --bus 4 --chip 0x51 --offset 0 --data 0xAA 0xBB 0xCC
-
-# Restore a previous full dump
-sudo python3 i2c.py eeprom restore --bus 4 --in cal_20260425.bin
-
-# Erase everything (DESTRUCTIVE)
-sudo python3 i2c.py eeprom clear --bus 4 --yes
-```
-
-#### Low-level (Drop-in for `i2c_read` / `i2c_write`)
-
-```bash
-# Same argument order as the original C tools
-sudo python3 i2c.py read  4 0x1a 0x306D 1
-sudo python3 i2c.py write 4 0x1a 0x306D 0x02
-
-# EEPROM uses 8-bit register addressing
-sudo python3 i2c.py read  4 0x51 0x00 16 --reg-bits 8
-sudo python3 i2c.py write 4 0x51 0x00 0xAA --reg-bits 8
-```
-
-#### Troubleshooting
-
-| Symptom | Likely Cause |
-| :--- | :--- |
-| `FATAL: /dev/i2c-4 not found` | I2C disabled in raspi-config, or wrong bus number |
-| `device did not ACK` | Wrong slave address, no camera on that port, or stream is running |
-| Strobe writes succeed but no pulse | Camera was streaming when you wrote — stop it and re-run `strobe on` |
-| `eeprom detect` only sees `0x50` | Different EEPROM chip — confirm with `i2cdetect -y 4` |
-| `trigger on` but sensor still free-runs | Stream was running — stop `rpicam-hello` / `libcamera-*` and re-run |
 
 ---
 
