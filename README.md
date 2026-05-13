@@ -89,7 +89,24 @@ Connect the camera to one of the CSI connectors on the Jetson Orin Nano carrier 
 
 ### 2. Install Binary Driver Package
 
-Extract and install the pre-compiled driver package:
+**Package**: `imx296_binary_package_20260427_blk0x070_v4.tar.gz`
+
+**Package contents**:
+```
+binary/
+  imx296.ko                                                       # kernel module (5.15.148-tegra)
+  tegra234-p3767-camera-p3768-imx296-imx296.dtbo                  # CSI0 + CSI1 = imx296 (color) + imx296 (color)
+  tegra234-p3767-camera-p3768-imx219-imx296.dtbo                  # CSI0 + CSI1 = imx219          + imx296 (color)
+  tegra234-p3767-camera-p3768-imx477-imx296.dtbo                  # CSI0 + CSI1 = imx477          + imx296 (color)
+  tegra234-p3767-camera-p3768-imx296mono-imx296mono.dtbo          # CSI0 + CSI1 = imx296 (mono)   + imx296 (mono)
+scripts/
+  install_binary.sh                                               # installer
+  camera_control_mono.sh                                          # mono preview helper (manual exposure/gain)
+  camera_control_color.sh                                         # color preview helper (auto exposure, GPU sink)
+  adjust_brightness.sh                                            # brightness test
+```
+
+Extract and install:
 
 ```bash
 cd 1-1jetson_orin_nano_driver
@@ -99,10 +116,7 @@ chmod +x install_binary.sh
 sudo ./install_binary.sh
 ```
 
-The installer will:
-- Copy the kernel module (`imx296.ko`) to `/lib/modules/$(uname -r)/kernel/drivers/media/i2c/`
-- Copy device tree overlays (`.dtbo` files) to `/boot/`
-- Run `depmod -a` to update module dependencies
+The installer copies `imx296.ko` to `/lib/modules/$(uname -r)/kernel/drivers/media/i2c/`, copies the `.dtbo` files to `/boot/`, and runs `depmod -a`.
 
 ### 3. Configure CSI Overlay
 
@@ -121,12 +135,12 @@ In the menu, select:
    - `Camera IMX219 + IMX296` — IMX219 on CSI0, IMX296 on CSI1
    - `Camera IMX477 + IMX296` — IMX477 on CSI0, IMX296 on CSI1
    - `Camera IMX296MONO Dual` — two IMX296 mono sensors
-   - `Camera IMX296MONO Single CSI0` — single IMX296 mono on CSI0
 4. **Save pin changes** → **Save and reboot to reconfigure pins**
+
+The tool patches `/boot/extlinux/extlinux.conf` with the correct `OVERLAYS` line and reboots.
 
 ### 4. Verify Installation
 
-Verify the driver is loaded:
 ```bash
 lsmod | grep imx296
 dmesg | grep imx296
@@ -136,15 +150,17 @@ dmesg | grep imx296
 
 **For Monochrome Camera**:
 ```bash
-./camera_control.sh
+cd 1-1jetson_orin_nano_driver/scripts
+./camera_control_mono.sh
 ```
 
 **For Color Camera**:
 ```bash
+cd 1-1jetson_orin_nano_driver/scripts
 ./camera_control_color.sh
 ```
 
-**Manual GStreamer Preview** (with recommended indoor lighting settings):
+**Manual GStreamer Preview** (recommended indoor lighting settings):
 ```bash
 gst-launch-1.0 nvarguscamerasrc num-buffers=30 \
     gainrange="4 4" exposuretimerange="200000 200000" \
