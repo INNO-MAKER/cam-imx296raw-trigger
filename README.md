@@ -89,83 +89,100 @@ Connect the camera to one of the CSI connectors on the Jetson Orin Nano carrier 
 
 ### 2. Install Binary Driver Package
 
-**Package**: `imx296_binary_package_20260427_blk0x070_v4.tar.gz`
+Two packages are available in `1-1jetson_orin_nano_driver/`:
+
+| Package | Description |
+| :--- | :--- |
+| `imx296_binary_package_20260520_dual_v4_3.tar.gz` | **Recommended** — Dual-camera driver (verified dual IMX296 overlay) |
+| `imx296_isp_binary_package_20260521_v0_2c.tar.gz` | ISP tuning package (optional, for image quality adjustment) |
+
+#### Dual Camera Driver (Recommended)
+
+**Package**: `imx296_binary_package_20260520_dual_v4_3.tar.gz`  
+**Target**: Jetson Orin Nano/NX, L4T r36.4.4, kernel `5.15.148-tegra`
 
 **Package contents**:
 ```
 binary/
-  imx296.ko                                                       # kernel module (5.15.148-tegra)
-  tegra234-p3767-camera-p3768-imx296-imx296.dtbo                  # CSI0 + CSI1 = imx296 (color) + imx296 (color)
-  tegra234-p3767-camera-p3768-imx219-imx296.dtbo                  # CSI0 + CSI1 = imx219          + imx296 (color)
-  tegra234-p3767-camera-p3768-imx477-imx296.dtbo                  # CSI0 + CSI1 = imx477          + imx296 (color)
-  tegra234-p3767-camera-p3768-imx296mono-imx296mono.dtbo          # CSI0 + CSI1 = imx296 (mono)   + imx296 (mono)
+  imx296.ko
+  tegra234-p3767-camera-p3768-imx296-imx296.dtbo
 scripts/
-  install_binary.sh                                               # installer
-  camera_control_mono.sh                                          # mono preview helper (manual exposure/gain)
-  camera_control_color.sh                                         # color preview helper (auto exposure, GPU sink)
-  adjust_brightness.sh                                            # brightness test
+  install_binary.sh
+  camera_control_color.sh
+  adjust_brightness.sh
 ```
+
+> **Note**: This package includes only the verified dual IMX296 overlay. Single-CAM0 overlays are not included as CAM0-only routing is board-specific. Other sensor combinations (e.g., IMX219 + IMX296, IMX477 + IMX296) require separate DTBO files — please contact us if needed.
 
 Extract and install:
 
 ```bash
 cd 1-1jetson_orin_nano_driver
-tar -xzf imx296_binary_package_20260427_blk0x070_v4.tar.gz
-cd scripts
+tar -xzf imx296_binary_package_20260520_dual_v4_3.tar.gz
+cd imx296_binary_package_20260520_dual_v4_3/scripts
 chmod +x install_binary.sh
-sudo ./install_binary.sh
+./install_binary.sh
 ```
 
-The installer copies `imx296.ko` to `/lib/modules/$(uname -r)/kernel/drivers/media/i2c/`, copies the `.dtbo` files to `/boot/`, and runs `depmod -a`.
+The installer copies `imx296.ko` to `/lib/modules/$(uname -r)/kernel/drivers/media/i2c/`, copies the DTBO to `/boot/`, runs `depmod -a`, and removes stale `/boot/*imx296*.dtbo` files (except the verified dual overlay) to prevent accidental selection of old overlays.
 
 ### 3. Configure CSI Overlay
 
-Use NVIDIA's Jetson-IO tool to select the appropriate camera configuration:
+Use NVIDIA's Jetson-IO tool to select the dual camera overlay:
 
 ```bash
 sudo /opt/nvidia/jetson-io/jetson-io.py
 ```
 
-In the menu, select:
+Select the following overlay display name, save, and reboot:
 
-1. **Configure Jetson 24pin CSI Connector**
-2. **Configure for compatible hardware**
-3. Pick the overlay matching your camera setup:
-   - `Camera IMX296 Dual` — two IMX296 color sensors
-   - `Camera IMX219 + IMX296` — IMX219 on CSI0, IMX296 on CSI1
-   - `Camera IMX477 + IMX296` — IMX477 on CSI0, IMX296 on CSI1
-   - `Camera IMX296MONO Dual` — two IMX296 mono sensors
-4. **Save pin changes** → **Save and reboot to reconfigure pins**
+```text
+Camera IMX296-C and IMX296-C
+```
 
-The tool patches `/boot/extlinux/extlinux.conf` with the correct `OVERLAYS` line and reboots.
+Alternatively, ensure `/boot/extlinux/extlinux.conf` contains:
+
+```text
+OVERLAYS /boot/tegra234-p3767-camera-p3768-imx296-imx296.dtbo
+```
+
+Then reboot:
+
+```bash
+sudo reboot
+```
 
 ### 4. Verify Installation
 
 ```bash
 lsmod | grep imx296
-dmesg | grep imx296
+ls -l /dev/video*
+v4l2-ctl -d /dev/video0 --list-formats-ext
+v4l2-ctl -d /dev/video1 --list-formats-ext
 ```
 
 ### 5. Test Camera Preview
 
-**For Monochrome Camera**:
+**Single-camera preview**:
 ```bash
-cd 1-1jetson_orin_nano_driver/scripts
-./camera_control_mono.sh
+gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! \
+  'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! \
+  nvvidconv ! xvimagesink sync=false
 ```
 
-**For Color Camera**:
+**Dual-camera preview** (must run both sensors in one pipeline):
 ```bash
-cd 1-1jetson_orin_nano_driver/scripts
+gst-launch-1.0 -e \
+  nvarguscamerasrc sensor-id=0 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false \
+  nvarguscamerasrc sensor-id=1 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false
+```
+
+> **Note**: Do not use two independent Argus applications for simultaneous preview; Argus can report `AlreadyAllocated` if the camera provider is opened from separate processes.
+
+**Using the helper script (Color Camera)**:
+```bash
+cd 1-1jetson_orin_nano_driver/imx296_binary_package_20260520_dual_v4_3/scripts
 ./camera_control_color.sh
-```
-
-**Manual GStreamer Preview** (recommended indoor lighting settings):
-```bash
-gst-launch-1.0 nvarguscamerasrc num-buffers=30 \
-    gainrange="4 4" exposuretimerange="200000 200000" \
-    ! 'video/x-raw(memory:NVMM),width=1456,height=1088' \
-    ! nvvidconv ! xvimagesink
 ```
 
 ---
@@ -372,7 +389,7 @@ sudo python3 i2c.py write 4 0x51 0x00 0xAA --reg-bits 8
 ## Repository Structure
 
 *   **`CAM-IMX296RAW-UserManual-V202.pdf`**: Latest technical manual with complete specifications.
-*   **`1-1jetson_orin_nano_driver/`**: Pre-compiled binary driver package for NVIDIA Jetson Orin Nano.
+*   **`1-1jetson_orin_nano_driver/`**: Pre-compiled binary driver packages for NVIDIA Jetson Orin Nano — includes dual-camera driver (`imx296_binary_package_20260520_dual_v4_3`) and ISP tuning package (`imx296_isp_binary_package_20260521_v0_2c`).
 *   **`imx296.sh` / `imx296-trixie.sh`**: Shell scripts for Raspberry Pi hardware trigger control.
 *   **`1-4Images/`**: Connection diagrams and hardware reference images.
 *   **`Old_Manual/`**: Legacy drivers and sample code (C/Python) for older Raspberry Pi kernel versions (5.4, 5.10, 6.1).
