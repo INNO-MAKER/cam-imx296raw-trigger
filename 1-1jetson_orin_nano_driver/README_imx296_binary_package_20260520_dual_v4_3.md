@@ -13,6 +13,7 @@ binary/
 scripts/
   install_binary.sh
   camera_control_color.sh
+  camera_control_mono.sh
   adjust_brightness.sh
 ```
 
@@ -96,3 +97,19 @@ gst-launch-1.0 -e \
 ```
 
 Do not use two independent Argus applications for simultaneous preview; Argus can report `AlreadyAllocated` if the camera provider is opened from separate processes.
+
+## Helper Scripts
+
+For color IMX296 preview/control:
+
+```bash
+cd scripts
+./camera_control_color.sh
+```
+
+For mono IMX296 preview/control:
+
+```bash
+cd scripts
+./camera_control_mono.sh
+```
