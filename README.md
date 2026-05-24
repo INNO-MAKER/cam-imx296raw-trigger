@@ -108,8 +108,9 @@ binary/
   tegra234-p3767-camera-p3768-imx296-imx296.dtbo
 scripts/
   install_binary.sh
-  camera_control_color.sh
-  adjust_brightness.sh
+  camera_control_mono.sh      # Mono camera: interactive exposure/gain control
+  camera_control_color.sh     # Color camera: interactive exposure/gain/sensor-id control
+  adjust_brightness.sh        # Mono camera: step-through brightness presets
 ```
 
 > **Note**: This package includes only the verified dual IMX296 overlay. Single-CAM0 overlays are not included as CAM0-only routing is board-specific. Other sensor combinations (e.g., IMX219 + IMX296, IMX477 + IMX296) require separate DTBO files — please contact us if needed.
@@ -179,10 +180,27 @@ gst-launch-1.0 -e \
 
 > **Note**: Do not use two independent Argus applications for simultaneous preview; Argus can report `AlreadyAllocated` if the camera provider is opened from separate processes.
 
-**Using the helper script (Color Camera)**:
+**Using the helper scripts**:
+
 ```bash
 cd 1-1jetson_orin_nano_driver/imx296_binary_package_20260520_dual_v4_3/scripts
+```
+
+| Script | Camera Type | Description |
+| :--- | :--- | :--- |
+| `camera_control_mono.sh` | Monochrome | Interactive prompt for exposure (10000–1000000 µs) and gain (1–16x); launches single-sensor preview |
+| `camera_control_color.sh` | Color | Interactive prompt for exposure, gain, and sensor ID (0 or 1); supports dual-sensor selection |
+| `adjust_brightness.sh` | Monochrome | Steps through 5 brightness presets (10ms/1x → 500ms/8x) to find optimal exposure |
+
+```bash
+# Monochrome camera
+./camera_control_mono.sh
+
+# Color camera (will prompt for sensor ID 0 or 1)
 ./camera_control_color.sh
+
+# Brightness calibration (step through presets)
+./adjust_brightness.sh
 ```
 
 ---
