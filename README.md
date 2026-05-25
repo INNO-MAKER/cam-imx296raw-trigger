@@ -89,16 +89,18 @@ Connect the camera to one of the CSI connectors on the Jetson Orin Nano carrier 
 
 ### 2. Install Binary Driver Package
 
-Two packages are available in `1-1jetson_orin_nano_driver/`:
+Three packages are available in `1-1jetson_orin_nano_driver/`:
 
-| Package | Description |
+| Package | Use Case |
 | :--- | :--- |
-| `imx296_binary_package_20260520_dual_v4_3.tar.gz` | **Recommended** — Dual-camera driver (verified dual IMX296 overlay) |
-| `imx296_isp_binary_package_20260521_v0_2c.tar.gz` | ISP tuning package (optional, for image quality adjustment) |
+| `imx296_binary_package_20260520_dual_v4_3.tar.gz` | **Color dual-camera** — IMX296 color sensor, V4L2 format `RG10` |
+| `imx296_mono_y10_binary_package_20260523_v1_0.tar.gz` | **Mono dual-camera** — IMX296LLR mono sensor, V4L2 format `Y10` |
+| `imx296_isp_binary_package_20260521_v0_2c.tar.gz` | **ISP tuning** — optional `camera_overrides.isp` for color/AWB improvement |
 
-#### Dual Camera Driver (Recommended)
+---
 
-**Package**: `imx296_binary_package_20260520_dual_v4_3.tar.gz`  
+#### Package A: Dual Color Driver (`imx296_binary_package_20260520_dual_v4_3`)
+
 **Target**: Jetson Orin Nano/NX, L4T r36.4.4, kernel `5.15.148-tegra`
 
 **Package contents**:
@@ -108,14 +110,14 @@ binary/
   tegra234-p3767-camera-p3768-imx296-imx296.dtbo
 scripts/
   install_binary.sh
-  camera_control_mono.sh      # Mono camera: interactive exposure/gain control
-  camera_control_color.sh     # Color camera: interactive exposure/gain/sensor-id control
-  adjust_brightness.sh        # Mono camera: step-through brightness presets
+  camera_control_mono.sh      # V4L2 raw capture (format reported as RG10 in this package)
+  camera_control_color.sh     # Argus color preview, interactive exposure/gain/sensor-id
+  adjust_brightness.sh        # Step-through brightness presets
 ```
 
-> **Note**: This package includes only the verified dual IMX296 overlay. Single-CAM0 overlays are not included as CAM0-only routing is board-specific. Other sensor combinations (e.g., IMX219 + IMX296, IMX477 + IMX296) require separate DTBO files — please contact us if needed.
+> **Note**: This package includes only the verified dual IMX296 color overlay. Single-CAM0 overlays and mixed-sensor combinations (e.g., IMX219 + IMX296) are not included — please contact us if needed.
 
-Extract and install:
+Install:
 
 ```bash
 cd 1-1jetson_orin_nano_driver
@@ -125,82 +127,153 @@ chmod +x install_binary.sh
 ./install_binary.sh
 ```
 
-The installer copies `imx296.ko` to `/lib/modules/$(uname -r)/kernel/drivers/media/i2c/`, copies the DTBO to `/boot/`, runs `depmod -a`, and removes stale `/boot/*imx296*.dtbo` files (except the verified dual overlay) to prevent accidental selection of old overlays.
+The installer copies `imx296.ko` to `/lib/modules/$(uname -r)/kernel/drivers/media/i2c/`, copies the DTBO to `/boot/`, runs `depmod -a`, and removes stale `/boot/*imx296*.dtbo` files to prevent accidental overlay selection.
 
-### 3. Configure CSI Overlay
-
-Use NVIDIA's Jetson-IO tool to select the dual camera overlay:
+**Select Overlay** (Jetson-IO):
 
 ```bash
 sudo /opt/nvidia/jetson-io/jetson-io.py
 ```
 
-Select the following overlay display name, save, and reboot:
+Select: `Camera IMX296-C and IMX296-C`, save, and reboot.
 
-```text
-Camera IMX296-C and IMX296-C
-```
-
-Alternatively, ensure `/boot/extlinux/extlinux.conf` contains:
+Or manually set `/boot/extlinux/extlinux.conf`:
 
 ```text
 OVERLAYS /boot/tegra234-p3767-camera-p3768-imx296-imx296.dtbo
 ```
 
-Then reboot:
+**Preview**:
 
 ```bash
+# Single-camera (Argus)
+gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! \
+  'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! \
+  nvvidconv ! xvimagesink sync=false
+
+# Dual-camera (must run in one pipeline)
+gst-launch-1.0 -e \
+  nvarguscamerasrc sensor-id=0 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false \
+  nvarguscamerasrc sensor-id=1 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false
+```
+
+> Do not open two independent Argus applications simultaneously — Argus may report `AlreadyAllocated`.
+
+**Helper scripts**:
+
+```bash
+cd imx296_binary_package_20260520_dual_v4_3/scripts
+
+# Color preview (interactive: exposure, gain, sensor ID)
+./camera_control_color.sh
+
+# Raw capture via V4L2 (format: RG10)
+DEVICE=/dev/video0 ./camera_control_mono.sh capture cam0_rg10
+DEVICE=/dev/video1 ./camera_control_mono.sh capture cam1_rg10
+
+# Step-through brightness presets
+./adjust_brightness.sh
+```
+
+---
+
+#### Package B: Dual Mono Y10 Driver (`imx296_mono_y10_binary_package_20260523_v1_0`)
+
+**Target**: Jetson Orin Nano/NX, L4T r36.4.4, kernel `5.15.148-tegra`  
+Use this package for dual IMX296LLR **mono** modules when V4L2 format should be reported as grayscale `Y10`.
+
+**Package contents**:
+```
+binary/
+  imx296.ko
+  tegra-camera.ko
+  tegra234-p3767-camera-p3768-imx296mono-y10-imx296mono-y10.dtbo
+scripts/
+  install_y10.sh
+  rollback_y10.sh
+  camera_control_mono.sh      # V4L2 raw capture (format: Y10)
+```
+
+Install:
+
+```bash
+cd 1-1jetson_orin_nano_driver
+tar -xzf imx296_mono_y10_binary_package_20260523_v1_0.tar.gz
+cd imx296_mono_y10_binary_package_20260523_v1_0/scripts
+chmod +x *.sh
+./install_y10.sh
+```
+
+**Select Overlay** (Jetson-IO):
+
+Select: `Camera IMX296LLR-Mono Y10 and IMX296LLR-Mono Y10`, save, and reboot.
+
+**Verify** (expected format: `Y10  10-bit Greyscale`):
+
+```bash
+v4l2-ctl -d /dev/video0 --list-formats-ext
+v4l2-ctl -d /dev/video1 --list-formats-ext
+```
+
+**Raw capture**:
+
+```bash
+cd imx296_mono_y10_binary_package_20260523_v1_0/scripts
+DEVICE=/dev/video0 ./camera_control_mono.sh capture cam0_y10
+DEVICE=/dev/video1 ./camera_control_mono.sh capture cam1_y10
+```
+
+The script writes `.raw`, `.pgm`, and (when OpenCV is available) `.png` files.
+
+**Rollback**:
+
+```bash
+./rollback_y10.sh /opt/imx296-y10-backup-YYYYmmddHHMMSS
 sudo reboot
 ```
 
-### 4. Verify Installation
+---
+
+#### Package C: ISP Tuning (`imx296_isp_binary_package_20260521_v0_2c`) — Optional
+
+Installs an experimental `camera_overrides.isp` for Jetson Argus to improve color/AWB quality for the IMX296 color sensor. Derived from an IMX477 ISP template with IMX296 black level and daylight CCM adjustments.
+
+> **Note**: This is not final production tuning. Validate image quality before shipping to end customers. Use only with the verified IMX296 driver/DTBO baseline.
+
+**Package contents**:
+```
+isp/
+  camera_overrides.isp
+scripts/
+  install_isp.sh
+  rollback_isp.sh
+```
+
+Install:
+
+```bash
+cd 1-1jetson_orin_nano_driver
+tar -xzf imx296_isp_binary_package_20260521_v0_2c.tar.gz
+cd imx296_isp_binary_package_20260521_v0_2c/scripts
+chmod +x install_isp.sh rollback_isp.sh
+./install_isp.sh
+```
+
+The installer writes to `/var/nvidia/nvcam/settings/camera_overrides.isp`, backs up any existing override, and restarts `nvargus-daemon` automatically (no reboot required).
+
+**Rollback**:
+
+```bash
+./rollback_isp.sh
+```
+
+### 3. Verify Installation
 
 ```bash
 lsmod | grep imx296
 ls -l /dev/video*
 v4l2-ctl -d /dev/video0 --list-formats-ext
 v4l2-ctl -d /dev/video1 --list-formats-ext
-```
-
-### 5. Test Camera Preview
-
-**Single-camera preview**:
-```bash
-gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! \
-  'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! \
-  nvvidconv ! xvimagesink sync=false
-```
-
-**Dual-camera preview** (must run both sensors in one pipeline):
-```bash
-gst-launch-1.0 -e \
-  nvarguscamerasrc sensor-id=0 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false \
-  nvarguscamerasrc sensor-id=1 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false
-```
-
-> **Note**: Do not use two independent Argus applications for simultaneous preview; Argus can report `AlreadyAllocated` if the camera provider is opened from separate processes.
-
-**Using the helper scripts**:
-
-```bash
-cd 1-1jetson_orin_nano_driver/imx296_binary_package_20260520_dual_v4_3/scripts
-```
-
-| Script | Camera Type | Description |
-| :--- | :--- | :--- |
-| `camera_control_mono.sh` | Monochrome | Interactive prompt for exposure (10000–1000000 µs) and gain (1–16x); launches single-sensor preview |
-| `camera_control_color.sh` | Color | Interactive prompt for exposure, gain, and sensor ID (0 or 1); supports dual-sensor selection |
-| `adjust_brightness.sh` | Monochrome | Steps through 5 brightness presets (10ms/1x → 500ms/8x) to find optimal exposure |
-
-```bash
-# Monochrome camera
-./camera_control_mono.sh
-
-# Color camera (will prompt for sensor ID 0 or 1)
-./camera_control_color.sh
-
-# Brightness calibration (step through presets)
-./adjust_brightness.sh
 ```
 
 ---
