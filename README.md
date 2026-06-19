@@ -89,69 +89,106 @@ Connect the camera to one of the CSI connectors on the Jetson Orin Nano carrier 
 
 ### 2. Install Binary Driver Package
 
-Three packages are available in `1-1jetson_orin_nano_driver/`:
+The unified driver package is available in `1-1jetson_orin_nano_driver/5.15.148/`:
 
-| Package | Use Case |
-| :--- | :--- |
-| `imx296_binary_package_20260520_dual_v4_3.tar.gz` | **Color dual-camera** — IMX296 color sensor, V4L2 format `RG10` |
-| `imx296_mono_y10_binary_package_20260523_v1_0.tar.gz` | **Mono dual-camera** — IMX296LLR mono sensor, V4L2 format `Y10` |
-| `imx296_isp_binary_package_20260521_v0_2c.tar.gz` | **ISP tuning** — optional `camera_overrides.isp` for color/AWB improvement |
+| Package | Target | Description |
+| :--- | :--- | :--- |
+| `imx296_unified_binary_working_20260615_v1.0.tar.gz` | kernel `5.15.148-tegra` | **Unified Color + Mono** — single package supports both IMX296 (color, `RG10`) and IMX296LLR (mono, `Y10`) |
 
----
-
-#### Package A: Dual Color Driver (`imx296_binary_package_20260520_dual_v4_3`)
-
-**Target**: Jetson Orin Nano/NX, L4T r36.4.4, kernel `5.15.148-tegra`
+**Target**: Jetson Orin Nano/NX, L4T r36.4.4 / JetPack 6, kernel `5.15.148-tegra`
 
 **Package contents**:
 ```
 binary/
-  imx296.ko
-  tegra234-p3767-camera-p3768-imx296-imx296.dtbo
+  imx296.ko              sensor driver (auto-detects color vs mono from chip)
+  tegra-camera.ko        VI module, Y10-patched (color-compatible)
+overlays/
+  tegra234-p3767-camera-p3768-imx296-cam0.dtbo        (color, CAM0)
+  tegra234-p3767-camera-p3768-imx296-cam1.dtbo        (color, CAM1)
+  tegra234-p3767-camera-p3768-imx296-dual.dtbo        (color, dual)
+  tegra234-p3767-camera-p3768-imx296mono-cam0.dtbo    (mono, CAM0)
+  tegra234-p3767-camera-p3768-imx296mono-cam1.dtbo    (mono, CAM1)
+  tegra234-p3767-camera-p3768-imx296mono-dual.dtbo    (mono, dual)
+isp/
+  camera_overrides.isp   optional Argus color ISP override (color only)
+install_binary.sh        installs both modules + all overlays + ISP
 scripts/
-  install_binary.sh
-  camera_control_mono.sh      # V4L2 raw capture (format reported as RG10 in this package)
-  camera_control_color.sh     # Argus color preview, interactive exposure/gain/sensor-id
-  adjust_brightness.sh        # Step-through brightness presets
+  preview_argus.sh             color Argus preview
+  preview_argus_mono.sh        mono Argus preview (GRAY8, avoids pink tint)
+  camera_control_color.sh      interactive color preview (exposure/gain/sensor-id)
+  camera_control_mono.sh       V4L2 raw capture/preview (Y10 or RG10)
+  configure_extlinux_overlay.sh  headless overlay selector (alternative to Jetson-IO)
+  install_isp.sh / rollback_isp.sh  ISP override install/rollback
+  rollback_y10.sh              restore modules + overlays from backup
+develop/
+  verify_cam.sh / verify_mono.sh  post-install verification helpers
 ```
 
-> **Note**: This package includes only the verified dual IMX296 color overlay. Single-CAM0 overlays and mixed-sensor combinations (e.g., IMX219 + IMX296) are not included — please contact us if needed.
-
-Install:
+**Install**:
 
 ```bash
-cd 1-1jetson_orin_nano_driver
-tar -xzf imx296_binary_package_20260520_dual_v4_3.tar.gz
-cd imx296_binary_package_20260520_dual_v4_3/scripts
+cd 1-1jetson_orin_nano_driver/5.15.148
+tar -xzf imx296_unified_binary_working_20260615_v1.0.tar.gz
+cd imx296_unified_binary_working_20260615_v1.0
 chmod +x install_binary.sh
-./install_binary.sh
+sudo ./install_binary.sh
 ```
 
-The installer copies `imx296.ko` to `/lib/modules/$(uname -r)/kernel/drivers/media/i2c/`, copies the DTBO to `/boot/`, runs `depmod -a`, and removes stale `/boot/*imx296*.dtbo` files to prevent accidental overlay selection.
+The installer copies both kernel modules and all six overlays to `/boot/`, runs `depmod -a`, and installs the optional ISP override. It does **not** edit `extlinux.conf` — you must select the overlay separately (see below).
 
-**Select Overlay** (Jetson-IO):
+---
+
+#### Select Overlay — Color or Mono
+
+After installation, choose **one** overlay to activate. Use Jetson-IO (recommended) or the headless helper:
+
+**Option A — Jetson-IO (interactive)**:
 
 ```bash
-sudo /opt/nvidia/jetson-io/jetson-io.py
+sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -l    # list headers + exact names
+
+# COLOR (RG10, Argus/ISP path)
+sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296-C Cam0'           # CAM0 only
+sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296-C Cam1'           # CAM1 only
+sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296-C and IMX296-C'   # dual
+
+# MONO (Y10, raw V4L2 path)
+sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296LLR-Mono Y10 Cam0'
+sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296LLR-Mono Y10 Cam1'
+sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296LLR-Mono Y10 and IMX296LLR-Mono Y10'
+
+sudo reboot   # enable only ONE of the above, then reboot
 ```
 
-Select: `Camera IMX296-C and IMX296-C`, save, and reboot.
+Or interactively: `sudo /opt/nvidia/jetson-io/jetson-io.py`
 
-Or manually set `/boot/extlinux/extlinux.conf`:
+> **Note**: header 2 = the 24-pin CSI connector on Orin Nano. Run `-l` first to confirm.
 
-```text
-OVERLAYS /boot/tegra234-p3767-camera-p3768-imx296-imx296.dtbo
-```
-
-**Preview**:
+**Option B — Headless helper** (safe alternative to manual `extlinux.conf` editing):
 
 ```bash
-# Single-camera (Argus)
+sudo ./scripts/configure_extlinux_overlay.sh cam0   # cam0 | cam1 | dual
+sudo reboot
+```
+
+> **Never hand-edit `extlinux.conf` directly** — a label without an `FDT` line silently ignores `OVERLAYS`. Use Jetson-IO or the helper script.
+
+---
+
+#### Preview After Reboot
+
+**Color** (Argus/ISP path):
+
+```bash
+# Quick preview
+scripts/preview_argus.sh
+
+# Or with GStreamer directly
 gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! \
   'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! \
   nvvidconv ! xvimagesink sync=false
 
-# Dual-camera (must run in one pipeline)
+# Dual-camera (single pipeline)
 gst-launch-1.0 -e \
   nvarguscamerasrc sensor-id=0 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false \
   nvarguscamerasrc sensor-id=1 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false
@@ -159,112 +196,35 @@ gst-launch-1.0 -e \
 
 > Do not open two independent Argus applications simultaneously — Argus may report `AlreadyAllocated`.
 
-**Helper scripts**:
+**Mono** (raw V4L2 path, no ISP):
 
 ```bash
-cd imx296_binary_package_20260520_dual_v4_3/scripts
+# Argus preview (GRAY8, avoids pink/magenta tint)
+scripts/preview_argus_mono.sh
 
-# Color preview (interactive: exposure, gain, sensor ID)
-./camera_control_color.sh
-
-# Raw capture via V4L2 (format: RG10)
-DEVICE=/dev/video0 ./camera_control_mono.sh capture cam0_rg10
-DEVICE=/dev/video1 ./camera_control_mono.sh capture cam1_rg10
-
-# Step-through brightness presets
-./adjust_brightness.sh
+# Or raw V4L2 capture
+DEVICE=/dev/video0 scripts/camera_control_mono.sh capture cam0_y10
+DEVICE=/dev/video0 scripts/camera_control_mono.sh preview
 ```
+
+The capture script auto-detects `Y10` vs `RG10`, writes `.raw` + `.pgm` + `.png` (when OpenCV is available).
 
 ---
 
-#### Package B: Dual Mono Y10 Driver (`imx296_mono_y10_binary_package_20260523_v1_0`)
+#### Optional: ISP Color Tuning
 
-**Target**: Jetson Orin Nano/NX, L4T r36.4.4, kernel `5.15.148-tegra`  
-Use this package for dual IMX296LLR **mono** modules when V4L2 format should be reported as grayscale `Y10`.
-
-**Package contents**:
-```
-binary/
-  imx296.ko
-  tegra-camera.ko
-  tegra234-p3767-camera-p3768-imx296mono-y10-imx296mono-y10.dtbo
-scripts/
-  install_y10.sh
-  rollback_y10.sh
-  camera_control_mono.sh      # V4L2 raw capture (format: Y10)
-```
-
-Install:
+For improved color/AWB quality on the color variant:
 
 ```bash
-cd 1-1jetson_orin_nano_driver
-tar -xzf imx296_mono_y10_binary_package_20260523_v1_0.tar.gz
-cd imx296_mono_y10_binary_package_20260523_v1_0/scripts
-chmod +x *.sh
-./install_y10.sh
+sudo scripts/install_isp.sh    # installs camera_overrides.isp, restarts nvargus-daemon
+sudo scripts/rollback_isp.sh   # rollback if needed
 ```
 
-**Select Overlay** (Jetson-IO):
-
-Select: `Camera IMX296LLR-Mono Y10 and IMX296LLR-Mono Y10`, save, and reboot.
-
-**Verify** (expected format: `Y10  10-bit Greyscale`):
+#### Rollback
 
 ```bash
-v4l2-ctl -d /dev/video0 --list-formats-ext
-v4l2-ctl -d /dev/video1 --list-formats-ext
-```
-
-**Raw capture**:
-
-```bash
-cd imx296_mono_y10_binary_package_20260523_v1_0/scripts
-DEVICE=/dev/video0 ./camera_control_mono.sh capture cam0_y10
-DEVICE=/dev/video1 ./camera_control_mono.sh capture cam1_y10
-```
-
-The script writes `.raw`, `.pgm`, and (when OpenCV is available) `.png` files.
-
-**Rollback**:
-
-```bash
-./rollback_y10.sh /opt/imx296-y10-backup-YYYYmmddHHMMSS
+scripts/rollback_y10.sh /opt/imx296-mono-backup-YYYYmmddHHMMSS
 sudo reboot
-```
-
----
-
-#### Package C: ISP Tuning (`imx296_isp_binary_package_20260521_v0_2c`) — Optional
-
-Installs an experimental `camera_overrides.isp` for Jetson Argus to improve color/AWB quality for the IMX296 color sensor. Derived from an IMX477 ISP template with IMX296 black level and daylight CCM adjustments.
-
-> **Note**: This is not final production tuning. Validate image quality before shipping to end customers. Use only with the verified IMX296 driver/DTBO baseline.
-
-**Package contents**:
-```
-isp/
-  camera_overrides.isp
-scripts/
-  install_isp.sh
-  rollback_isp.sh
-```
-
-Install:
-
-```bash
-cd 1-1jetson_orin_nano_driver
-tar -xzf imx296_isp_binary_package_20260521_v0_2c.tar.gz
-cd imx296_isp_binary_package_20260521_v0_2c/scripts
-chmod +x install_isp.sh rollback_isp.sh
-./install_isp.sh
-```
-
-The installer writes to `/var/nvidia/nvcam/settings/camera_overrides.isp`, backs up any existing override, and restarts `nvargus-daemon` automatically (no reboot required).
-
-**Rollback**:
-
-```bash
-./rollback_isp.sh
 ```
 
 ### 3. Verify Installation
@@ -480,12 +440,12 @@ sudo python3 i2c.py write 4 0x51 0x00 0xAA --reg-bits 8
 ## Repository Structure
 
 *   **`CAM-IMX296RAW-UserManual-V202.pdf`**: Latest technical manual with complete specifications.
-*   **`1-1jetson_orin_nano_driver/`**: Pre-compiled binary driver packages for NVIDIA Jetson Orin Nano — includes dual-camera driver (`imx296_binary_package_20260520_dual_v4_3`) and ISP tuning package (`imx296_isp_binary_package_20260521_v0_2c`).
+*   **`1-1jetson_orin_nano_driver/5.15.148/`**: Unified binary driver package for NVIDIA Jetson Orin Nano (`imx296_unified_binary_working_20260615_v1.0.tar.gz`) — supports both color (RG10) and mono (Y10) variants, kernel `5.15.148-tegra`.
 *   **`imx296.sh` / `imx296-trixie.sh`**: Shell scripts for Raspberry Pi hardware trigger control.
 *   **`1-4Images/`**: Connection diagrams and hardware reference images.
-*   **`Old_Manual/`**: Legacy drivers and sample code (C/Python) for older Raspberry Pi kernel versions (5.4, 5.10, 6.1).
-*   **`i2c-tools-arch32/` / `i2c-tools-arch64/`**: Pre-compiled I2C diagnostic tools.
-*   **`i2c-tools-python-eeprom&strobe/`**: Python-based I2C utilities for EEPROM and strobe control.
+*   **`FAQ/Old_Manual/`**: Legacy drivers and sample code (C/Python) for older Raspberry Pi kernel versions (5.4, 5.10, 6.1).
+*   **`FAQ/i2c-tools-arch32/` / `FAQ/i2c-tools-arch64/`**: Pre-compiled I2C diagnostic tools.
+*   **`i2c-tools-python-eeprom-strobe-trigger/`**: Python-based I2C utilities for EEPROM, strobe, and trigger control.
 *   **`Certifications/`**: CE and FCC compliance documents.
 
 ---
@@ -534,10 +494,4 @@ sudo python3 i2c.py write 4 0x51 0x00 0xAA --reg-bits 8
 - Refer to the control parameter ranges table above
 - Consult the user manual for detailed image quality tuning
 
----
 
-## License & Terms
-
-This repository contains pre-built binaries, drivers, and utilities for the CAM-IMX296RAW-TRIGGER camera module. Use of these materials is subject to the terms and conditions provided by INNO-MAKER.
-
-For detailed licensing information and terms of use, please contact our support team.
