@@ -8,7 +8,7 @@
 
 The **CAM-IMX296Mono-GS** and **CAM-IMX296Color-GS** are professional-grade global shutter camera modules featuring the **Sony IMX296** CMOS sensor. The **Mono** variant (IMX296LLR) provides monochrome imaging without color filter, while the **Color** variant (IMX296LQR) includes a fixed color filter array. Both are designed for high-speed motion capture, automation, and machine vision applications where rolling shutter distortion must be eliminated.
 
-These modules are fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson Orin Nano. Both platforms support up to 60fps at 1456×1088 resolution and exposure times as short as 30μs. Advanced features like hardware trigger and strobe synchronization are currently available on Raspberry Pi only (Not supported on Jetson Orin Nano currently). These capabilities make them ideal for high-speed photography and demanding imaging applications.
+These modules are compatible with Raspberry Pi 3, 4, and 5. They support up to 60fps at 1456×1088 resolution and exposure times as short as 30μs. Hardware trigger and strobe synchronization are available on supported Raspberry Pi configurations, making the modules suitable for high-speed photography and demanding imaging applications.
 
 ---
 
@@ -20,11 +20,11 @@ These modules are fully compatible with Raspberry Pi (3, 4, 5) and NVIDIA Jetson
 *   **Mono & Color Variants**: 
     - **CAM-IMX296Mono-GS** (IMX296LLR) - No color filter for maximum sensitivity
     - **CAM-IMX296Color-GS** (IMX296LQR) - Fixed color filter array for RGB imaging
-*   **Hardware Trigger & Strobe**: Dedicated pins for external trigger input and strobe output (Raspberry Pi only; Not supported on Jetson Orin Nano currently)
+*   **Hardware Trigger & Strobe**: Dedicated pins for external trigger input and strobe output on supported Raspberry Pi configurations
 *   **Low Power Consumption**: Operates with analog 3.3V, digital 1.2V, and interface 1.8V triple power supply
 *   **High Sensitivity**: Low dark current and low PLS characteristics for excellent low-light performance
-*   **Broad Compatibility**: Supports Raspberry Pi 3, 4, and 5 (Debian Bookworm/Trixie) and NVIDIA Jetson Orin Nano
-*   **Native Driver Support**: Works directly with official kernel drivers for both platforms
+*   **Broad Compatibility**: Supports Raspberry Pi 3, 4, and 5 (Debian Bookworm/Trixie)
+*   **Native Raspberry Pi Driver Support**: Works directly with official kernel drivers
 *   **Flexible Lens Options**: Support M12 and CS lens mounts with included lens holder and adapter
 
 ---
@@ -81,163 +81,6 @@ rpicam-hello --list-cameras
 
 ---
 
-## Quick Start Guide — NVIDIA Jetson Orin Nano
-
-### 1. Hardware Connection
-
-Connect the camera to one of the CSI connectors on the Jetson Orin Nano carrier board using the appropriate ribbon cable.
-
-### 2. Install Binary Driver Package
-
-The unified driver package is available in `1-1jetson_orin_nano_driver/5.15.148/`:
-
-| Package | Target | Description |
-| :--- | :--- | :--- |
-| `imx296_unified_binary_working_20260615_v1.0.tar.gz` | kernel `5.15.148-tegra` | **Unified Color + Mono** — single package supports both IMX296 (color, `RG10`) and IMX296LLR (mono, `Y10`) |
-
-**Target**: Jetson Orin Nano/NX, L4T r36.4.4 / JetPack 6, kernel `5.15.148-tegra`
-
-**Package contents**:
-```
-binary/
-  imx296.ko              sensor driver (auto-detects color vs mono from chip)
-  tegra-camera.ko        VI module, Y10-patched (color-compatible)
-overlays/
-  tegra234-p3767-camera-p3768-imx296-cam0.dtbo        (color, CAM0)
-  tegra234-p3767-camera-p3768-imx296-cam1.dtbo        (color, CAM1)
-  tegra234-p3767-camera-p3768-imx296-dual.dtbo        (color, dual)
-  tegra234-p3767-camera-p3768-imx296mono-cam0.dtbo    (mono, CAM0)
-  tegra234-p3767-camera-p3768-imx296mono-cam1.dtbo    (mono, CAM1)
-  tegra234-p3767-camera-p3768-imx296mono-dual.dtbo    (mono, dual)
-isp/
-  camera_overrides.isp   optional Argus color ISP override (color only)
-install_binary.sh        installs both modules + all overlays + ISP
-scripts/
-  preview_argus.sh             color Argus preview
-  preview_argus_mono.sh        mono Argus preview (GRAY8, avoids pink tint)
-  camera_control_color.sh      interactive color preview (exposure/gain/sensor-id)
-  camera_control_mono.sh       V4L2 raw capture/preview (Y10 or RG10)
-  configure_extlinux_overlay.sh  headless overlay selector (alternative to Jetson-IO)
-  install_isp.sh / rollback_isp.sh  ISP override install/rollback
-  rollback_y10.sh              restore modules + overlays from backup
-develop/
-  verify_cam.sh / verify_mono.sh  post-install verification helpers
-```
-
-**Install**:
-
-```bash
-cd 1-1jetson_orin_nano_driver/5.15.148
-tar -xzf imx296_unified_binary_working_20260615_v1.0.tar.gz
-cd imx296_unified_binary_working_20260615_v1.0
-chmod +x install_binary.sh
-sudo ./install_binary.sh
-```
-
-The installer copies both kernel modules and all six overlays to `/boot/`, runs `depmod -a`, and installs the optional ISP override. It does **not** edit `extlinux.conf` — you must select the overlay separately (see below).
-
----
-
-#### Select Overlay — Color or Mono
-
-After installation, choose **one** overlay to activate. Use Jetson-IO (recommended) or the headless helper:
-
-**Option A — Jetson-IO (interactive)**:
-
-```bash
-sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -l    # list headers + exact names
-
-# COLOR (RG10, Argus/ISP path)
-sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296-C Cam0'           # CAM0 only
-sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296-C Cam1'           # CAM1 only
-sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296-C and IMX296-C'   # dual
-
-# MONO (Y10, raw V4L2 path)
-sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296LLR-Mono Y10 Cam0'
-sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296LLR-Mono Y10 Cam1'
-sudo python3 /opt/nvidia/jetson-io/config-by-hardware.py -n '2=Camera IMX296LLR-Mono Y10 and IMX296LLR-Mono Y10'
-
-sudo reboot   # enable only ONE of the above, then reboot
-```
-
-Or interactively: `sudo /opt/nvidia/jetson-io/jetson-io.py`
-
-> **Note**: header 2 = the 24-pin CSI connector on Orin Nano. Run `-l` first to confirm.
-
-**Option B — Headless helper** (safe alternative to manual `extlinux.conf` editing):
-
-```bash
-sudo ./scripts/configure_extlinux_overlay.sh cam0   # cam0 | cam1 | dual
-sudo reboot
-```
-
-> **Never hand-edit `extlinux.conf` directly** — a label without an `FDT` line silently ignores `OVERLAYS`. Use Jetson-IO or the helper script.
-
----
-
-#### Preview After Reboot
-
-**Color** (Argus/ISP path):
-
-```bash
-# Quick preview
-scripts/preview_argus.sh
-
-# Or with GStreamer directly
-gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! \
-  'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! \
-  nvvidconv ! xvimagesink sync=false
-
-# Dual-camera (single pipeline)
-gst-launch-1.0 -e \
-  nvarguscamerasrc sensor-id=0 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false \
-  nvarguscamerasrc sensor-id=1 ! 'video/x-raw(memory:NVMM),width=1456,height=1088,framerate=30/1' ! queue ! nvvidconv ! xvimagesink sync=false
-```
-
-> Do not open two independent Argus applications simultaneously — Argus may report `AlreadyAllocated`.
-
-**Mono** (raw V4L2 path, no ISP):
-
-```bash
-# Argus preview (GRAY8, avoids pink/magenta tint)
-scripts/preview_argus_mono.sh
-
-# Or raw V4L2 capture
-DEVICE=/dev/video0 scripts/camera_control_mono.sh capture cam0_y10
-DEVICE=/dev/video0 scripts/camera_control_mono.sh preview
-```
-
-The capture script auto-detects `Y10` vs `RG10`, writes `.raw` + `.pgm` + `.png` (when OpenCV is available).
-
----
-
-#### Optional: ISP Color Tuning
-
-For improved color/AWB quality on the color variant:
-
-```bash
-sudo scripts/install_isp.sh    # installs camera_overrides.isp, restarts nvargus-daemon
-sudo scripts/rollback_isp.sh   # rollback if needed
-```
-
-#### Rollback
-
-```bash
-scripts/rollback_y10.sh /opt/imx296-mono-backup-YYYYmmddHHMMSS
-sudo reboot
-```
-
-### 3. Verify Installation
-
-```bash
-lsmod | grep imx296
-ls -l /dev/video*
-v4l2-ctl -d /dev/video0 --list-formats-ext
-v4l2-ctl -d /dev/video1 --list-formats-ext
-```
-
----
-
 ### Raspberry Pi Camera Testing
 
 For Raspberry Pi, use the `rpicam-apps` suite to test the camera:
@@ -256,40 +99,18 @@ rpicam-vid -t 5000 -o test.h264
 rpicam-hello --list-cameras
 ```
 
-### Camera Control Parameters
-
-Supported control ranges for Jetson Orin Nano:
-
-| Control | Min | Max | Unit | Notes |
-|---|---|---|---|---|
-| `gainrange` | 1 | 16 | linear multiplier | ≈ 0 … 24 dB |
-| `exposuretimerange` | 1000 | 1000000 | nanoseconds | 1 µs … 1 ms |
-| `framerate` | ~0.06 | ~60.4 | fps | Varies by resolution |
-
-### Brightness Presets
-
-Use the `adjust_brightness.sh` script for quick brightness adjustments:
-
-| Preset | Gain | Exposure (ns) | Scene |
-|---|---|---|---|
-| 1 | 1 | 10,000 | Very dark / Reference |
-| 2 | 1 | 50,000 | Bright outdoor |
-| 3 | 2 | 100,000 | Normal |
-| 4 | 4 | 200,000 | **Indoor (recommended start)** |
-| 5 | 8 | 500,000 | Low light |
-
 ---
 
 ## Advanced Features: Hardware Trigger
 
-The module supports hardware triggering via GPIO for Raspberry Pi platforms. External trigger and strobe are not currently supported on Jetson Orin Nano.
+The module supports hardware triggering via GPIO on supported Raspberry Pi platforms.
 
 ### Raspberry Pi Trigger Scripts
 
 *   **Standard Trigger (`imx296.sh`)**: A loop script that toggles GPIO 23 to trigger the camera.
 *   **Trixie/Bookworm Trigger (`imx296-trixie.sh`)**: Optimized trigger command for the latest OS versions using `gpioset`.
 
-**Note**: External trigger and strobe functionality are currently available for Raspberry Pi only. Not supported on Jetson Orin Nano currently.
+**Note**: External trigger and strobe functionality is available on supported Raspberry Pi configurations.
 
 ### Trigger Pinout
 
@@ -440,7 +261,6 @@ sudo python3 i2c.py write 4 0x51 0x00 0xAA --reg-bits 8
 ## Repository Structure
 
 *   **`CAM-IMX296RAW-UserManual-V202.pdf`**: Latest technical manual with complete specifications.
-*   **`1-1jetson_orin_nano_driver/5.15.148/`**: Unified binary driver package for NVIDIA Jetson Orin Nano (`imx296_unified_binary_working_20260615_v1.0.tar.gz`) — supports both color (RG10) and mono (Y10) variants, kernel `5.15.148-tegra`.
 *   **`imx296.sh` / `imx296-trixie.sh`**: Shell scripts for Raspberry Pi hardware trigger control.
 *   **`1-4Images/`**: Connection diagrams and hardware reference images.
 *   **`FAQ/Old_Manual/`**: Legacy drivers and sample code (C/Python) for older Raspberry Pi kernel versions (5.4, 5.10, 6.1).
@@ -457,7 +277,6 @@ sudo python3 i2c.py write 4 0x51 0x00 0xAA --reg-bits 8
 | Raspberry Pi 3 | Bullseye, Bookworm | ✓ Supported | Legacy kernel support available; Trigger/Strobe supported |
 | Raspberry Pi 4 | Bullseye, Bookworm, Trixie | ✓ Supported | Recommended for production; Trigger/Strobe supported |
 | Raspberry Pi 5 | Bookworm, Trixie | ✓ Supported | Latest platform, fully optimized; Trigger/Strobe supported |
-| NVIDIA Jetson Orin Nano | JetPack 6.0+ | ✓ Supported | Binary driver package included; Trigger/Strobe not supported currently |
 
 ---
 
@@ -465,7 +284,6 @@ sudo python3 i2c.py write 4 0x51 0x00 0xAA --reg-bits 8
 
 *   **Official Documentation**: 
     - [Raspberry Pi Camera Guide](https://www.raspberrypi.com/documentation/computers/camera_software.html)
-    - [NVIDIA Jetson Documentation](https://docs.nvidia.com/jetson/)
 *   **User Manual**: See `CAM-IMX296RAW-UserManual-V202.pdf`
 *   **Website**: [www.inno-maker.com](https://www.inno-maker.com)
 *   **Email**: [support@inno-maker.com](mailto:support@inno-maker.com) | [sales@inno-maker.com](mailto:sales@inno-maker.com)
@@ -481,17 +299,9 @@ sudo python3 i2c.py write 4 0x51 0x00 0xAA --reg-bits 8
 3. Verify the driver is loaded: `lsmod | grep imx296`
 4. Check kernel messages: `dmesg | tail -20`
 
-### Camera Not Detected on Jetson Orin Nano
-
-1. Verify the ribbon cable is properly connected to the CSI port
-2. Confirm the binary driver package is installed: `lsmod | grep imx296`
-3. Verify the correct device tree overlay is loaded via Jetson-IO
-4. Check system logs: `sudo dmesg | grep imx296`
-
 ### Low Image Quality or Brightness Issues
 
 - Use the brightness preset scripts to adjust gain and exposure
 - Refer to the control parameter ranges table above
 - Consult the user manual for detailed image quality tuning
-
 
